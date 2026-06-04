@@ -1,0 +1,41 @@
+{
+	storage file_system /caddyserver # 自定义 Caddy 数据存储路径
+	admin off # 禁用 admin API
+	persist_config off
+	log {
+		output file /caddyserver/log/error.log # 错误日志目录
+		format console
+		level ERROR
+	}
+	log log0 {
+		output file /caddyserver/log/access.log # 访问日志目录
+		format console
+		include http.log.access.log0
+	}
+
+	servers :50000 { # 建议端口号大于等于 10000，下同
+		trusted_proxies cloudflare {
+			interval 12h
+			timeout 15s
+		}
+		protocols h2 # 在可能需要时自行添加 h1 协议支持，Cloudflare 不支持 h3 回源
+	}
+}
+
+:50000 {
+	tls /path/to/origin.pem /path/to/origin.key { # 修改为 Cloudflare Origin CA 证书和私钥路径，需在“SSL/TLS > 源服务器 > Origin 证书”创建
+		protocols tls1.2 tls1.3
+		client_auth {
+			trust_pool file {
+				# 启用 trusted_pool 后默认使用 require_and_verify 模式，无需指定
+				# 下方 PEM 证书的下载地址：https://developers.cloudflare.com/ssl/static/authenticated_origin_pull_ca.pem
+				# 需在 “SSL/TLS > 源服务器 > Authenticated Origin Pulls” 打开“全局”开关
+				pem_file /path/to/authenticated_origin_pull_ca.pem
+			}
+		}
+	}
+
+	log log0 # 启用访问日志
+
+	reverse_proxy 127.0.0.1:12345 # 反向代理到本地应用
+}

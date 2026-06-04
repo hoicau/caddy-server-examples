@@ -1,0 +1,80 @@
+name: Build caddy
+
+on:
+  workflow_dispatch:
+
+  release:
+    types: 
+      - 'prereleased'
+      - 'released'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            name: "linux-amd64",
+            GOARCH: amd64,
+            GOOS: linux,
+            release: true
+          }
+        - {
+            name: "linux-arm64",
+            GOARCH: arm64,
+            GOOS: linux,
+            release: true
+          }
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Get latest Caddy version
+      id: caddy_version
+      run: |
+        LATEST_TAG=$(curl -s https://api.github.com/repos/caddyserver/caddy/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+        echo "Found version: $LATEST_TAG"
+        echo "version=$LATEST_TAG" >> $GITHUB_OUTPUT
+
+    - name: Install go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.25'
+        check-latest: true
+    
+    - name: Install xcaddy
+      run: go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+    
+    - name: Build caddy
+      run: |
+        mkdir release-tmp
+        export GOARCH=${{ matrix.config.GOARCH }} 
+        export GOOS=${{ matrix.config.GOOS }} 
+        ~/go/bin/xcaddy build ${{ steps.caddy_version.outputs.version }} \
+          --with github.com/caddyserver/forwardproxy=github.com/netres26/forwardproxy@naive \
+          --with github.com/WeidiDeng/caddy-cloudflare-ip \
+          --with github.com/caddy-dns/cloudflare \
+          --output ./release-tmp/caddy
+
+    - name: Calculate Hash
+      run: |
+        cd ./release-tmp || exit 1
+        sha256sum * > sha256
+
+    - name: Compress to tar
+      run: |
+        mkdir release-ready
+        cd ./release-tmp
+        tar -zcvf ../release-ready/caddy-${{ matrix.config.name }}.tar.gz *
+
+    - name: Upload to GitHub Release
+      uses: svenstaro/upload-release-action@v2
+      if: github.event_name == 'release' && matrix.config.release
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: ./release-ready/caddy-${{ matrix.config.name }}.tar.gz
+        tag: ${{ github.ref }}
+        overwrite: true
