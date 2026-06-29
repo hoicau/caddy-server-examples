@@ -1,5 +1,5 @@
 {
-	storage file_system /caddyserver # 自定义 Caddy 数据存储路径
+	storage file_system /caddyserver
 	admin off # 禁用 admin API
 	persist_config off
 	log {
@@ -13,8 +13,7 @@
 		include http.log.access.log0
 	}
 
-	email your@email.com # 修改为自己的电子邮箱，用于 ACME 申请证书
-
+	email your@email.com # 修改为自己的电子邮箱
 	servers :443 {
 		protocols h2 h3 # 在可能需要时自行添加 h1 协议支持
 	}
@@ -31,24 +30,24 @@
 	}
 }
 
-# Caddy 自动按 SNI 申请并出示对应证书、终结 TLS，再按域名分流到不同后端
+# 按域名分流到不同后端
 a.example.com { # 修改为自己的域名
 	import common
-	reverse_proxy 127.0.0.1:12345 # 反向代理到后端 A
+	reverse_proxy 127.0.0.1:12345 # 反向代理到本地应用
 }
 
 b.example.com { # 修改为自己的域名
 	import common
-	reverse_proxy 127.0.0.1:23456 # 反向代理到后端 B
+	reverse_proxy 127.0.0.1:23456 # 反向代理到本地应用
 }
 
-# 同一证书/站点下还可按路径等进一步分流
+# 按路径分流
 c.example.com { # 修改为自己的域名
 	import common
 	handle /api/* {
-		reverse_proxy 127.0.0.1:34567 # /api/* 转发到后端 C-API
+		reverse_proxy 127.0.0.1:34567 # /api/* 反向代理到对应的后端
 	}
 	handle {
-		reverse_proxy 127.0.0.1:45678 # 其余请求转发到后端 C-Web
+		reverse_proxy 127.0.0.1:45678 # 其余请求反向代理到另一个后端
 	}
 }
