@@ -1,0 +1,43 @@
+{
+	storage file_system /caddyserver
+	admin off # 禁用 admin API
+	persist_config off
+	log {
+		output file /caddyserver/log/error.log # 错误日志目录
+		format console
+		level ERROR
+	}
+	log log0 {
+		output file /caddyserver/log/access.log # 访问日志目录
+		format console
+		include http.log.access.log0
+	}
+
+	email your@email.com # 修改为自己的电子邮箱
+
+	# 使用 EAB（External Account Binding）向第三方 CA 申请证书
+	# 以下以 Google Trust Services 为例，其他 CA 请替换 acme_ca 地址及 EAB 凭据
+	acme_ca https://dv.acme-v02.api.pki.goog/directory # Google Trust Services ACME 目录，修改为第三方 CA 提供的地址
+	acme_eab {
+		key_id YOUR_EAB_KEY_ID   # 修改为 CA 提供的 EAB Key ID
+		mac_key YOUR_EAB_MAC_KEY # 修改为 CA 提供的 EAB HMAC Key（Base64url 编码）
+	}
+
+	servers :443 {
+		protocols h2 h3 # 在可能需要时自行添加 h1 协议支持
+	}
+}
+
+server.example.com { # 修改为自己的域名
+	tls {
+		protocols tls1.2 tls1.3
+	}
+
+	log log0 # 启用访问日志
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" # 启用 HSTS
+	}
+
+	reverse_proxy 127.0.0.1:12345 # 反向代理到本地应用
+}
