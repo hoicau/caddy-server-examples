@@ -54,7 +54,6 @@ jobs:
         export GOARCH=${{ matrix.config.GOARCH }} 
         export GOOS=${{ matrix.config.GOOS }} 
         ~/go/bin/xcaddy build ${{ steps.caddy_version.outputs.version }} \
-          --with github.com/caddyserver/forwardproxy=github.com/hoicau/forwardproxy@naive \
           --with github.com/WeidiDeng/caddy-cloudflare-ip \
           --with github.com/caddy-dns/cloudflare \
           --output ./release-tmp/caddy
