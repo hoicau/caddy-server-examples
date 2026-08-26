@@ -1,0 +1,1 @@
+使用 EAB（External Account Binding）向第三方 CA 申请证书，以 Google Trust Services 为例。
