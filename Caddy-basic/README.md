@@ -1,29 +1,28 @@
-监听 `80` 和 `443` 端口并反向代理到本地应用，默认自动申请 TLS 证书和重定向到 HTTPS。
+Listens on ports `80` and `443` and reverse proxies requests to a local application. Automatically obtains TLS certificates and redirects HTTP traffic to HTTPS by default.
 
-如果需要作为静态文件服务器：
+### Static File Server
 
+If you want to use Caddy as a static file server:
+
+```caddyfile
+# Find:
+reverse_proxy 127.0.0.1:12345 # Reverse proxy to local application
+
+# Replace with:
+root * /home/user/www # Path to your website files
+file_server
 ```
-找到：
-########
-reverse_proxy @host 127.0.0.1:12345 # 反向代理到其他本地应用
-########
 
-然后改为：
-########
-root /home/user/www # 修改为自己存放 Web 文件的路径
-########
-```
+### Reverse Proxy to an External Website
 
-如果需要作为对其他网站的反向代理：
+If you need to reverse proxy requests to another website/host:
 
-```
-找到：
-########
-reverse_proxy @host 127.0.0.1:12345 # 反向代理到其他本地应用
-########
+```caddyfile
+# Find:
+reverse_proxy 127.0.0.1:12345 # Reverse proxy to local application
 
-然后改为：
-########
-reverse_proxy https://target.example.com # 反向代理到其他网站
-########
+# Replace with:
+reverse_proxy https://target.example.com {
+    header_up Host {upstream_hostport}
+}
 ```

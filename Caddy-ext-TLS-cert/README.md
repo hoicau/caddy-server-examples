@@ -1,1 +1,1 @@
-使用 EAB（External Account Binding）向第三方 CA 申请证书，以 Google Trust Services 为例。
+Obtains TLS certificates from a third-party ACME Certificate Authority (CA) using EAB (External Account Binding). This example demonstrates integration with Google Trust Services (GTS).
