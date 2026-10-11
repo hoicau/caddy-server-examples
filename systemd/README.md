@@ -1,20 +1,39 @@
-使用 `systemctl` 控制 caddy 服务。
+# Caddy systemd Service Management
 
+Manage the Caddy web server service using `systemctl`.
+
+### 1. Create Dedicated User and Group
+
+```bash
+# Create caddy:caddy system user and group
+sudo groupadd --system caddy
+sudo useradd --system \
+  --gid caddy \
+  --no-create-home \
+  --shell /usr/sbin/nologin \
+  caddy
 ```
-# 新建 caddy:caddy 用户（组）
-groupadd --system caddy
-useradd --system \
---gid caddy \
---no-create-home \
---shell /usr/sbin/nologin \
-caddy
 
-# 新建 data 文件夹并赋权
-mkdir /caddyserver
-chown caddy:caddy /caddyserver
-chmod 755 /caddyserver
+### 2. Prepare Data Directory
 
-# 写入 systemctl
+```bash
+# Create data/log directory and set ownership
+sudo mkdir -p /caddyserver/log
+sudo chown -R caddy:caddy /caddyserver
+sudo chmod 755 /caddyserver
+```
+
+### 3. Install systemd Service Unit
+
+Place the provided [`caddy.service`](file:///home/victorchan/Documents/git/caddy-server-examples/systemd/caddy.service) file into `/etc/systemd/system/`:
+
+```bash
+sudo cp caddy.service /etc/systemd/system/caddy.service
+```
+
+Or write the unit file directly:
+
+```bash
 sudo tee /etc/systemd/system/caddy.service > /dev/null <<EOF
 [Unit]
 Description=Caddy
@@ -37,8 +56,17 @@ AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
 [Install]
 WantedBy=multi-user.target
 EOF
+```
 
-# 重载 systemctl 并启用服务
-systemctl daemon-reload
-systemctl enable --now caddy
+### 4. Enable and Start the Service
+
+```bash
+# Reload systemd daemon
+sudo systemctl daemon-reload
+
+# Enable and start Caddy immediately
+sudo systemctl enable --now caddy
+
+# Check service status
+sudo systemctl status caddy
 ```

@@ -1,1 +1,1 @@
-由 Caddy 处理 TLS 的多域名 SNI 分流，监听 `80` 和 `443` 端口。
+Handles multi-domain TLS routing via Server Name Indication (SNI) on ports `80` and `443`. Route different hostnames or path prefixes to separate backend services using common snippets and route matchers.
