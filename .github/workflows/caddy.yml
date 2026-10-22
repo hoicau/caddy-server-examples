@@ -37,8 +37,18 @@ jobs:
 
     - name: Get latest Caddy version
       id: caddy_version
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        LATEST_TAG=$(curl -s https://api.github.com/repos/caddyserver/caddy/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+        AUTH_HEADER=()
+        if [ -n "$GH_TOKEN" ]; then
+          AUTH_HEADER=(-H "Authorization: Bearer $GH_TOKEN")
+        fi
+        LATEST_TAG=$(curl -sL "${AUTH_HEADER[@]}" https://api.github.com/repos/caddyserver/caddy/releases/latest | jq -r .tag_name)
+        if [ -z "$LATEST_TAG" ] || [ "$LATEST_TAG" = "null" ]; then
+          echo "Error: Failed to fetch latest Caddy release tag"
+          exit 1
+        fi
         echo "Found version: $LATEST_TAG"
         echo "version=$LATEST_TAG" >> $GITHUB_OUTPUT
 
