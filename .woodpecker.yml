@@ -1,3 +1,6 @@
+when:
+  - event: [tag, manual]
+
 matrix:
   include:
     - NAME: linux-amd64
@@ -11,17 +14,15 @@ steps:
   - name: build
     image: golang:1.26
     commands:
-      - apt-get update && apt-get install -y curl tar ca-certificates
+      - export PATH="$(go env GOPATH)/bin:$PATH"
       - go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
-      - LATEST_TAG=$(curl -s https://api.github.com/repos/caddyserver/caddy/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-      - 'echo "Found Caddy version: $${LATEST_TAG}"'
       - mkdir -p release-tmp release-ready
-      - export GOOS=${TARGET_OS}
-      - export GOARCH=${TARGET_ARCH}
-      - xcaddy build $${LATEST_TAG} --with github.com/WeidiDeng/caddy-cloudflare-ip --with github.com/caddy-dns/cloudflare --output ./release-tmp/caddy
+      - CGO_ENABLED=0 GOOS=${TARGET_OS} GOARCH=${TARGET_ARCH} xcaddy build $(printenv CADDY_VERSION || true) --with github.com/WeidiDeng/caddy-cloudflare-ip --with github.com/caddy-dns/cloudflare --output ./release-tmp/caddy
       - cd ./release-tmp
       - sha256sum * > sha256
       - tar -zcvf ../release-ready/caddy-${NAME}.tar.gz *
+      - cd ../release-ready
+      - sha256sum caddy-${NAME}.tar.gz > sha256sum-${NAME}.txt
 
   - name: release
     image: woodpeckerci/plugin-release
@@ -32,4 +33,4 @@ steps:
       files:
         - release-ready/*
     when:
-      event: tag
+      - event: [tag]

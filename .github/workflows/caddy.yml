@@ -2,6 +2,11 @@ name: Build caddy
 
 on:
   workflow_dispatch:
+    inputs:
+      caddy_version:
+        description: 'Caddy version to build (leave empty for latest)'
+        required: false
+        default: ''
 
   release:
     types: 
@@ -35,13 +40,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Get latest Caddy version
-      id: caddy_version
-      run: |
-        LATEST_TAG=$(curl -s https://api.github.com/repos/caddyserver/caddy/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-        echo "Found version: $LATEST_TAG"
-        echo "version=$LATEST_TAG" >> $GITHUB_OUTPUT
-
     - name: Install go
       uses: actions/setup-go@v5
       with:
@@ -52,11 +50,12 @@ jobs:
       run: go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
     
     - name: Build caddy
+      env:
+        CADDY_VERSION: ${{ inputs.caddy_version }}
       run: |
-        mkdir release-tmp
-        export GOARCH=${{ matrix.config.GOARCH }} 
-        export GOOS=${{ matrix.config.GOOS }} 
-        ~/go/bin/xcaddy build ${{ steps.caddy_version.outputs.version }} \
+        mkdir -p release-tmp
+        CGO_ENABLED=0 GOOS=${{ matrix.config.GOOS }} GOARCH=${{ matrix.config.GOARCH }} \
+          ~/go/bin/xcaddy build $(printenv CADDY_VERSION || true) \
           --with github.com/WeidiDeng/caddy-cloudflare-ip \
           --with github.com/caddy-dns/cloudflare \
           --output ./release-tmp/caddy
